@@ -103,7 +103,10 @@ function ConnectButton({
     setStage("connecting");
 
     const clientId = process.env.NEXT_PUBLIC_NEYNAR_CLIENT_ID;
-    const redirectUri = encodeURIComponent(`${window.location.origin}/api/auth/farcaster`);
+    const callbackUrl =
+      process.env.NEXT_PUBLIC_NEYNAR_REDIRECT_URI ||
+      `${window.location.origin}/api/auth/farcaster`;
+    const redirectUri = encodeURIComponent(callbackUrl);
     const url = `https://app.neynar.com/login?client_id=${clientId}&redirect_uri=${redirectUri}`;
 
     const popup = window.open(url, "fc-auth", "width=480,height=700,left=200,top=100");

@@ -98,7 +98,7 @@ async function fetchUserCasts(fid: number): Promise<string[]> {
   const client = getNeynarClient();
   const response = await client.fetchCastsForUser({ fid, limit: 50 });
 
-  return response.casts
+  return (response.casts ?? [])
     .map((cast: { text?: string | null }) => normalizeCastText(cast.text))
     .filter((text) => text.length > 10 && /[a-zA-Z0-9]/.test(text))
     .slice(0, 40);
@@ -140,11 +140,30 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const user = Number.isFinite(fid)
-      ? await fetchUserProfile(fid)
-      : await fetchUserByUsername(username);
+    let user: any;
+    let casts: string[];
 
-    const casts = await fetchUserCasts(user.fid);
+    if (Number.isFinite(fid)) {
+      const neynar = getNeynarClient();
+      const [profileRes, castsRes] = await Promise.all([
+        neynar.fetchBulkUsers({ fids: [fid] }),
+        neynar.fetchCastsForUser({ fid, limit: 50 })
+      ]);
+
+      const profile = profileRes.users[0];
+      if (!profile) {
+        return NextResponse.json({ error: `No user found for fid ${fid}` }, { status: 404 });
+      }
+
+      user = profile;
+      casts = (castsRes.casts ?? [])
+        .filter((c: any) => c.text && c.text.length > 10)
+        .map((c: any) => c.text)
+        .slice(0, 40);
+    } else {
+      user = await fetchUserByUsername(username);
+      casts = await fetchUserCasts(user.fid);
+    }
 
     if (casts.length < 5) {
       return NextResponse.json(
@@ -165,8 +184,8 @@ export async function POST(request: NextRequest) {
     const agent: AgentPersonality = {
       fid: user.fid,
       username: user.username,
-      displayName: user.display_name || user.username,
-      pfpUrl: user.pfp_url || "",
+      displayName: user.displayName ?? user.display_name ?? "",
+      pfpUrl: user.pfpUrl ?? user.pfp_url ?? "",
       ...personality,
       createdAt: Date.now()
     };

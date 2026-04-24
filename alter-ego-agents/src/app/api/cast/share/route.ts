@@ -29,7 +29,12 @@ Built with @neynar + @gemini`;
 
   try {
     const client = getNeynarClient();
-    await client.publishCast({ signerUuid, text: castText });
+    await client.publishCast({
+      postCastReqBody: {
+        signerUuid,
+        text: castText
+      }
+    });
     return NextResponse.json({ success: true });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

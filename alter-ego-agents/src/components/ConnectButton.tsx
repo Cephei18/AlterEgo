@@ -17,7 +17,9 @@ export default function ConnectButton({ onConnect }: { onConnect?: (user: Farcas
     setLoading(true);
 
     const clientId = process.env.NEXT_PUBLIC_NEYNAR_CLIENT_ID;
-    const redirectUri = `${window.location.origin}/api/auth/farcaster`;
+    const redirectUri =
+      process.env.NEXT_PUBLIC_NEYNAR_REDIRECT_URI ||
+      `${window.location.origin}/api/auth/farcaster`;
     const authUrl = `https://app.neynar.com/login?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}`;
     const popup = window.open(authUrl, "neynar-auth", "width=500,height=700");
 
