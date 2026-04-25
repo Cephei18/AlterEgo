@@ -31,12 +31,13 @@ Built with @neynar + @gemini`;
     const client = getNeynarClient();
     await client.publishCast({
       postCastReqBody: {
-        signerUuid,
-        text: castText
-      }
-    });
+    signerUuid: process.env.NEYNAR_SIGNER_UUID!,
+    text: castText,
+  },
+});
     return NextResponse.json({ success: true });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+

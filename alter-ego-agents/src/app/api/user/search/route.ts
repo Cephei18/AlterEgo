@@ -10,9 +10,11 @@ export async function GET(req: NextRequest) {
 
   try {
     const client = getNeynarClient();
-    const res = await client.lookupUserByUsername({ username });
-    return NextResponse.json({ user: res.user });
+   const res = await client.lookupUserByUsername({ username });
+   return NextResponse.json({ user: res.user });   // response shape: res.user directly
   } catch {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 }
+
+
