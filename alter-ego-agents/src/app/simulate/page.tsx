@@ -1,8 +1,11 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { SimulationResult } from "../../lib/types";
 import { getScoreColor, getScoreVerb } from "../../lib/scoreHelpers";
+const [shareError, setShareError] = useState("");
 
 export default function SimulatePage() {
   const [result, setResult] = useState<SimulationResult | null>(null);
@@ -18,24 +21,39 @@ export default function SimulatePage() {
   }, []);
 
   const shareToFarcaster = async () => {
-    if (!result || !agents) return;
-    setSharing(true);
-    try {
-      await fetch("/api/cast/share", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          result,
-          usernameA: agents.agentA.username,
-          usernameB: agents.agentB.username
-        })
-      });
-      setShared(true);
-    } finally {
-      setSharing(false);
-    }
-  };
+  if (!result || !agents) return;
+  setSharing(true);
+  setShareError("");
 
+  try {
+    // Get the user's signer_uuid from sessionStorage
+    const fcUser = JSON.parse(sessionStorage.getItem("fc_user") || "{}");
+    const signerUuid = fcUser.signerUuid;
+
+    if (!signerUuid) throw new Error("Not signed in. Go back to home and reconnect.");
+
+    const res = await fetch("/api/cast/share", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        result,
+        usernameA: agents.agentA.username,
+        usernameB: agents.agentB.username,
+        signerUuid,            // ← pass it here
+      }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Share failed");
+    setShared(true);
+  } catch (e: any) {
+    setShareError(e.message);
+  } finally {
+    setSharing(false);
+  }
+};
+
+  
   if (!result) return <div className="text-white p-8">Loading...</div>;
 
   return (

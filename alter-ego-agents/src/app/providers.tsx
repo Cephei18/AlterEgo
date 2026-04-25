@@ -1,13 +1,13 @@
 "use client";
 
-import { NeynarContextProvider, Theme } from "@neynar/react";
+import type { ReactNode } from "react";
+import { NeynarContextProvider } from "@neynar/react";
 
-export function Providers({ children }: { children: React.ReactNode }) {
+export function Providers({ children }: { children: ReactNode }) {
   return (
     <NeynarContextProvider
       settings={{
         clientId: process.env.NEXT_PUBLIC_NEYNAR_CLIENT_ID || "",
-        defaultTheme: Theme.Dark,
       }}
     >
       {children}

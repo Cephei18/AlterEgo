@@ -44,7 +44,7 @@ export default function HomePage() {
 
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
-          throw new Error(body.error || "Server error " + res.status);
+          throw new Error((body as any).error || "Server error " + res.status);
         }
 
         router.push("/agent");
