@@ -22,6 +22,20 @@ type PersonalityCore = {
   oneLiner: string;
 };
 
+function normalizeTopInterests(arr: any): string[] {
+  if (!Array.isArray(arr)) return ["technology", "software", "internet"];
+
+  if (arr.length < 3) {
+    return [...arr, "technology", "software"].slice(0, 3);
+  }
+
+  if (arr.length > 5) {
+    return arr.slice(0, 5);
+  }
+
+  return arr;
+}
+
 function normalizeCastText(text: string | null | undefined): string {
   return (text || "").replace(/\s+/g, " ").trim();
 }
@@ -75,17 +89,55 @@ function validatePersonalityShape(value: unknown): asserts value is PersonalityC
   if (!isNonEmptyString(data.oneLiner, 8))
     throw new Error("Invalid personality JSON: oneLiner too weak");
 }
+
 async function parsePersonalityWithRepair(rawText: string): Promise<PersonalityCore> {
-  try {
-    const parsed = JSON.parse(extractJsonCandidate(rawText));
-    validatePersonalityShape(parsed);
-    return parsed;
-  } catch {
+  const tryParse = (text: string) => {
+    try {
+      return JSON.parse(text);
+    } catch {
+      return null;
+    }
+  };
+
+  const extract = (text: string) => {
+    const match = text.match(/\{[\s\S]*\}/);
+    return match ? match[0] : text;
+  };
+
+  // 1. First attempt
+  let candidate = extract(rawText);
+  let parsed = tryParse(candidate);
+
+  // 2. If failed → try repair via LLM
+  if (!parsed) {
     const repaired = await callLLM(buildJsonRepairPrompt(rawText), 1024);
-    const parsed = JSON.parse(extractJsonCandidate(repaired));
-    validatePersonalityShape(parsed);
-    return parsed;
+    candidate = extract(repaired);
+    parsed = tryParse(candidate);
   }
+
+  // 3. If STILL failed → force fallback (very important)
+  if (!parsed) {
+    console.warn("⚠️ Falling back to default personality");
+
+    parsed = {
+      communicationStyle: "direct and concise",
+      topInterests: ["technology", "software", "internet"],
+      workingStyle: "execution-focused",
+      collaborationStrengths: ["clear communication", "fast iteration"],
+      potentialWeaknesses: ["impatience"],
+      communicationTone: "direct and practical",
+      decisionMaking: "quick, action-oriented",
+      valueStatement: "building useful things efficiently",
+      oneLiner: "Fast builder focused on execution"
+    };
+  }
+
+  // 🔥 normalize ALWAYS
+  parsed.topInterests = normalizeTopInterests(parsed.topInterests);
+
+  validatePersonalityShape(parsed);
+
+  return parsed;
 }
 
 // ─── Neynar helpers (all using current SDK conventions) ───────────────────────

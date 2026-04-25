@@ -1,100 +1,110 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import type { AgentPersonality } from "../../lib/types";
 
 export default function AgentPage() {
-  const [agent, setAgent] = useState<AgentPersonality | null>(null);
+  const [agent, setAgent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
 
   useEffect(() => {
-    const userStr = sessionStorage.getItem("fc_user");
-    if (!userStr) {
-      router.push("/");
-      return;
-    }
+    const stored = sessionStorage.getItem("fc_user");
+    if (!stored) return;
 
-    const user = JSON.parse(userStr) as { fid: number };
-    fetch(`/api/agent/get?fid=${user.fid}`)
-      .then((r) => r.json())
-      .then((d) => {
-        setAgent((d?.agent || null) as AgentPersonality | null);
+    const user = JSON.parse(stored);
+
+    const fetchAgent = async () => {
+      try {
+        const res = await fetch("/api/agent/get?fid=" + user.fid);
+        const data = await res.json();
+        setAgent(data.agent);
+      } catch (err) {
+        console.error(err);
+      } finally {
         setLoading(false);
-      })
-      .catch(() => {
-        setLoading(false);
+      }
+    };
+
+    fetchAgent();
+  }, []);
+
+  // 🔥 ADD THIS FUNCTION INSIDE COMPONENT
+  const runSimulation = async () => {
+    try {
+      const fcUser = JSON.parse(sessionStorage.getItem("fc_user") || "{}");
+
+      const resAgent = await fetch(`/api/agent/get?fid=${fcUser.fid}`);
+      const dataAgent = await resAgent.json();
+
+      const res = await fetch("/api/simulate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          agentA: dataAgent.agent,
+          agentB: dataAgent.agent // same for now
+        })
       });
-  }, [router]);
 
-  if (loading) return <LoadingScreen text="Reading your casts..." />;
-  if (!agent) return <div className="min-h-screen bg-black text-white p-8">Error loading agent</div>;
+      const data = await res.json();
+
+      sessionStorage.setItem("sim_result", JSON.stringify(data.result));
+      sessionStorage.setItem("sim_agents", JSON.stringify({
+        agentA: dataAgent.agent,
+        agentB: dataAgent.agent
+      }));
+
+      window.location.href = "/simulate";
+
+    } catch (err) {
+      console.error(err);
+      alert("Simulation failed");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        Loading your agent...
+      </div>
+    );
+  }
+
+  if (!agent) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        No agent found
+      </div>
+    );
+  }
 
   return (
-    <main className="min-h-screen bg-black text-white p-8 max-w-2xl mx-auto">
-      <div className="flex items-center gap-4 mb-8">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={agent.pfpUrl} alt={agent.displayName} className="w-16 h-16 rounded-full" />
-        <div>
-          <div className="font-bold text-xl">{agent.displayName}</div>
-          <div className="text-purple-400">@{agent.username}</div>
-          <div className="text-gray-400 text-sm italic mt-1">"{agent.oneLiner}"</div>
+    <main className="min-h-screen bg-black text-white p-8 flex flex-col items-center">
+      <div className="max-w-xl w-full text-center">
+
+        <h1 className="text-4xl font-bold mb-6">
+          Your Alter Ego 🧬
+        </h1>
+
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-4">
+
+          <p><span className="text-purple-400">Communication:</span> {agent.communicationStyle}</p>
+          <p><span className="text-purple-400">Working Style:</span> {agent.workingStyle}</p>
+          <p><span className="text-purple-400">Interests:</span> {agent.topInterests?.join(", ")}</p>
+          <p><span className="text-purple-400">Strengths:</span> {agent.strengths?.join(", ")}</p>
+          <p><span className="text-purple-400">Weaknesses:</span> {agent.weaknesses?.join(", ")}</p>
+
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 gap-4 mb-8">
-        <AgentTrait label="Communication" value={agent.communicationStyle} />
-        <AgentTrait label="Working style" value={agent.workingStyle} />
-        <AgentTrait label="Interests" value={agent.topInterests.join(" · ")} />
-        <AgentTrait label="Strengths" value={agent.collaborationStrengths.join(" · ")} />
-        <AgentTrait
-          label="Watch out for"
-          value={agent.potentialWeaknesses.join(" · ")}
-          accent="orange"
-        />
-      </div>
+        {/* 🔥 BUTTON INSIDE RETURN */}
+        <button
+          onClick={runSimulation}
+          className="mt-6 bg-purple-600 px-6 py-3 rounded-lg"
+        >
+          Run Simulation →
+        </button>
 
-      <button
-        onClick={() => router.push("/search")}
-        className="w-full bg-purple-600 hover:bg-purple-500 text-white font-semibold py-4 rounded-xl text-lg transition-all"
-      >
-        {`Find someone to collaborate with ${"->"}`}
-      </button>
+      </div>
     </main>
-  );
-}
-
-function AgentTrait({
-  label,
-  value,
-  accent = "purple"
-}: {
-  label: string;
-  value: string;
-  accent?: "purple" | "orange";
-}) {
-  return (
-    <div className="bg-gray-900 rounded-xl p-4 border border-gray-800">
-      <div
-        className={`text-xs font-semibold uppercase tracking-widest mb-1 ${
-          accent === "orange" ? "text-orange-400" : "text-purple-400"
-        }`}
-      >
-        {label}
-      </div>
-      <div className="text-gray-200 text-sm">{value}</div>
-    </div>
-  );
-}
-
-function LoadingScreen({ text }: { text: string }) {
-  return (
-    <div className="min-h-screen bg-black flex items-center justify-center">
-      <div className="text-white text-center">
-        <div className="w-8 h-8 border-2 border-purple-400 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-        <div className="text-gray-400">{text}</div>
-      </div>
-    </div>
   );
 }
