@@ -17,6 +17,20 @@ Think: **"What happens if we work together?" — answered before you start.**
 
 ---
 
+## 🌐 Use Case: Smarter Networking
+
+Traditional networking is often inefficient — people connect based on profiles, assumptions, or surface-level interests, only to later realize mismatches in communication style, expectations, or working approach. Alter Ego Agents introduces a more intelligent way to network by enabling users to simulate interactions before initiating them.
+
+Instead of blindly reaching out, a user can analyze how well they might align with another person by generating AI agents for both profiles and running a collaboration simulation. This provides insights into compatibility, potential friction points, and shared interests, helping users decide whether a connection is worth pursuing.
+
+This is especially valuable in:
+
+Hackathons and project collaborations, where team dynamics matter as much as skills
+Professional networking, where time and first impressions are critical
+Online communities, where context about people is limited
+
+By shifting networking from guesswork to data-informed decision-making, Alter Ego Agents helps users form more meaningful, productive, and compatible connections.
+
 ## ✨ Features
 
 - 🔐 Sign in with Farcaster (via Neynar)
