@@ -45,6 +45,9 @@ Think: **"What happens if we work together?" — answered before you start.**
 
 ---
 
+<img width="716" height="610" alt="image" src="https://github.com/user-attachments/assets/8b3cda6e-239d-45dc-b4fe-8c309be32d11" />
+
+
 ## 🏗️ Tech Stack
 
 - **Frontend:** Next.js (App Router) + Tailwind
